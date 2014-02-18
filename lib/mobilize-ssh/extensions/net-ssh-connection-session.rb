@@ -1,35 +1,61 @@
-class Net::SSH::Connection::Session
-  #from http://stackoverflow.com/questions/3386233/how-to-get-exit-status-with-rubys-netssh-library
-  def run(command)
-    ssh = self
-    stdout_data = ""
-    stderr_data = ""
-    exit_code = nil
-    exit_signal = nil
-    ssh.open_channel do |channel|
-      channel.exec(command) do |chan, success|
-        unless success
-          abort "FAILED: couldn't execute command (ssh.channel.exec)"
-        end
-        channel.on_data do |ch,data|
-          stdout_data+=data
-        end
+module Net
+  module SSH
+    module Connection
+      class Session
+        #except=true means exception will be raised on exit_code != 0
+        def run( _host, _command, _except = true, _streams = [ :stdout, :stderr ], _log = true )
 
-        channel.on_extended_data do |ch,type,data|
-          stderr_data+=data
-        end
+          _ssh, @stdout_data, @stderr_data    = self, "", ""
+          @exit_code, @exit_signal, @streams  = nil, nil, _streams
 
-        channel.on_request("exit-status") do |ch,data|
-          exit_code = data.read_long
-        end
+          @host, @command                     = _host, _command
 
-        channel.on_request("exit-signal") do |ch, data|
-          exit_signal = data.read_long
+          _ssh.open_channel                 do |_channel|
+            _ssh.run_proc _channel, _log
+          end
+          _ssh.loop
+
+          if                                    _except and @exit_code!=0
+            raise                               "#{ @host } stderr: " + @stderr_data
+          else
+            _result                           = {  'stdout'      => @stdout_data.strip,
+                                                   'stderr'      => @stderr_data.strip,
+                                                   'exit_code'   => @exit_code,
+                                                   'exit_signal' => @exit_signal  }
+            _result
+          end
+        end
+        def run_proc( _channel, _log = true )
+          _ssh                     = self
+          _channel.exec( @command ) do |_ch, _success|
+            unless                           _success
+              raise                          "FAILED: couldn't execute command (ssh.channel.exec)"
+            end
+            _channel.on_data                   do |_ch_d, _data|
+              @stdout_data                     +=  _data
+              _ssh.log_stream(                     :stdout, _data ) if _log
+            end
+
+            _channel.on_extended_data          do |_ch_ed, _type, _data|
+              @stderr_data                     +=  _data
+              _ssh.log_stream(                     :stderr, _data ) if _log
+            end
+
+            _channel.on_request("exit-status") do |_ch_exst, _data|
+              @exit_code                        = _data.read_long
+            end
+
+            _channel.on_request("exit-signal") do |_ch_exsig, _data|
+              @exit_signal                      = _data.read_long
+            end
+          end
+        end
+        def log_stream( _stream, _data )
+          if @streams.include?( _stream )
+            puts               "#{ @host } #{ _stream.to_s }: #{ _data }"
+          end
         end
       end
     end
-    ssh.loop
-    response = {'stdout'=>stdout_data, 'stderr'=>stderr_data, 'exit_code'=>exit_code, 'exit_signal'=>exit_signal}
-    response
   end
 end

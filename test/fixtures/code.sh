@@ -1,1 +1,1 @@
-tail /var/log/syslog
+ls /tmp | head

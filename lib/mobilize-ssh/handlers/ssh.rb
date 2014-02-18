@@ -34,7 +34,7 @@ module Mobilize
                    "sudo rm -rf  #{mobilize_dir}#{unique_name} && " +
                    "sudo mv #{unique_name} #{mobilize_dir} && " +
                    "sudo chown -R #{user_name} #{mobilize_dir} && " +
-                   "sudo chmod -R 0700 #{user_name} #{mobilize_dir}"
+                   "sudo chmod -R 0700 #{mobilize_dir}"
       Ssh.fire!(node,deploy_cmd)
       #need to use bash or we get no tee
       full_cmd = "/bin/bash -l -c '(cd #{deploy_dir} && sh #{deploy_cmd_path} > >(tee stdout) 2> >(tee stderr >&2))'"
@@ -136,7 +136,7 @@ module Mobilize
                    Net::SSH::Gateway.run(gname,guser,name,user,cmd,gopts,opts)
                  else
                    Net::SSH.start(name,user,opts) do |ssh|
-                     ssh.run(cmd)
+                     ssh.run(node, cmd)
                    end
                  end
       response

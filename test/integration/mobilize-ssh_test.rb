@@ -10,45 +10,44 @@ describe "Mobilize" do
     puts "restart workers"
     Mobilize::Jobtracker.restart_workers!
 
-    u = TestHelper.owner_user
-    r = u.runner
-    user_name = u.name
-    gdrive_slot = u.email
+    _user                          = TestHelper.owner_user
+    _runner                        = _user.runner
+    _user_name                     = _user.name
+    _gdrive_slot                   = _user.email
 
     puts "build test runner"
-    TestHelper.build_test_runner(user_name)
+    TestHelper.build_test_runner     _user_name
     assert Mobilize::Jobtracker.workers.length == Mobilize::Resque.config['max_workers'].to_i
 
     puts "add test code"
-    ["code.rb","code.sh","code2.sh"].each do |fixture_name|
-      target_url = "gsheet://#{r.title}/#{fixture_name}"
-      TestHelper.write_fixture(fixture_name, target_url, 'replace')
+    ["code.rb","code.sh","code2.sh"].each do |_fixture_name|
+      _target_url                  = "gsheet://#{ _runner.title }/#{ _fixture_name }"
+      TestHelper.write_fixture       _fixture_name, _target_url, 'replace'
     end
 
     puts "add/update jobs"
-    u.jobs.each{|j| j.stages.each{|s| s.delete}; j.delete}
-    jobs_fixture_name = "integration_jobs"
-    jobs_target_url = "gsheet://#{r.title}/jobs"
-    TestHelper.write_fixture(jobs_fixture_name, jobs_target_url, 'update')
+    _user.jobs.each{|_job| _job.stages.each{|_stage| _stage.delete}; _job.delete}
+    _jobs_fixture_name             = "integration_jobs"
+    _jobs_target_url               = "gsheet://#{ _runner.title }/jobs"
+    TestHelper.write_fixture         _jobs_fixture_name, _jobs_target_url, 'update', {'owner' => _user.name }
 
     puts "job rows added, force enqueue runner, wait for stages"
     #wait for stages to complete
-    expected_fixture_name = "integration_expected"
+    _expected_fixture_name         = "integration_expected"
     Mobilize::Jobtracker.stop!
-    r.enqueue!
-    TestHelper.confirm_expected_jobs(expected_fixture_name)
+    _runner.enqueue!
+    TestHelper.confirm_expected_jobs _expected_fixture_name
 
     puts "update job status and activity"
-    r.update_gsheet(gdrive_slot)
+    _runner.update_gsheet            _gdrive_slot
 
     puts "jobtracker posted data to test sheets"
-    ['ssh1.out','ssh2.out','ssh4.out'].each do |out_name|
-      url = "gsheet://#{r.title}/#{out_name}"
-      assert TestHelper.check_output(url, 'min_length' => 100) == true
+    ['ssh1.out','ssh2.out','ssh4.out'].each do |_out_name|
+      _url                         = "gsheet://#{_runner.title}/#{_out_name}"
+      assert TestHelper.check_output( _url, 'min_length' => 100) == true
     end
 
-    #shorter
-    url = "gsheet://#{r.title}/ssh3.out"
-    assert TestHelper.check_output(url, 'min_length' => 3) == true
+    _url                           = "gsheet://#{_runner.title}/ssh3.out"
+    assert TestHelper.check_output( _url, 'min_length' => 3 ) == true
   end
 end

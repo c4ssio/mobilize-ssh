@@ -1,1 +1,1 @@
-tail @file
+ls @file | head

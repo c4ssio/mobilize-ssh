@@ -101,20 +101,28 @@ module Mobilize
       return repo_dir
     end
 
-    def Git.read_by_dataset_path(dst_path,user_name,*args)
-      domain,repo,revision,file_path = []
-      dst_path.split("/").ie do |path_nodes|
-        domain    = path_nodes[0]
-        repo      = path_nodes[1..2].join("/")
-        revision  = path_nodes[3]
-        file_path = path_nodes[4..-1].join("/")
+    def Git.read_by_dataset_path( _dst_path, _user_name, *_args)
+      _domain,   _repo,
+      _revision, _file_path     = []
+      _dst_path.split("/").ie do |_path_nodes|
+        _domain                 = _path_nodes[0]
+        _repo                   = _path_nodes[1..2].join "/"
+        _revision               = _path_nodes[3]
+        _file_path              = _path_nodes[4..-1].join "/"
       end
       #slash in front of path
-      repo_dir = Git.pull(domain,repo,revision)
-      full_path = "#{repo_dir}/#{file_path}"
-      result = "cat #{full_path}".bash(true)
-      FileUtils.rm_r(repo_dir,:force=>true)
-      return result
+      _repo_dir                 = Git.pull  _domain, _repo, _revision
+      if _file_path
+        _full_path              = "#{ _repo_dir }/#{ _file_path }"
+        _result                 = "cat #{ _full_path}".bash true
+        FileUtils.rm_r            _repo_dir, force: true
+      else
+        _result                 = "tar -zcvf #{ _repo_dir }.tar.gz " +
+                                  "#{ _repo_dir } && " +
+                                  "cat #{ _repo_dir }.tar.gz".bash( true )
+        FileUtils.rm_r            _repo_dir, force: true
+      end
+      return _result
     end
   end
 end
