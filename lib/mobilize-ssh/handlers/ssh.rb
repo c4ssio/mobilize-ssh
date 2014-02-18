@@ -10,6 +10,9 @@ module Mobilize
         #for now, only gz is binary
         mode = fname.ends_with?(".gz") ? "wb" : "w"
         File.open(fpath,mode) {|f| f.print(fdata)}
+        if fname.ends_with?(".tar.gz")
+          "cd #{ loc_dir } && tar xzvf #{ fname }".bash(true)
+        end
       end
       return loc_dir if file_hash.keys.length>0
     end
@@ -98,13 +101,13 @@ module Mobilize
     end
 
     def Ssh.run(node,command,user_name,stage_path=nil,file_hash={},run_params=nil)
-      file_hash ||= {}
+      file_hash  ||= {}
       run_params ||={}
       #replace any params in the file_hash and command
       run_params.each do |k,v|
         command.gsub!("@#{k}",v)
         file_hash.each do |name,data|
-          data.gsub!("@#{k}",v)
+          data.gsub!("@#{k}",v) unless name.ends_with? '.gz'
         end
       end
       #make sure the dir for this command is unique
@@ -114,7 +117,7 @@ module Mobilize
                      [user_name,node,command,file_hash.keys.to_s,Time.now.to_f.to_s].join.to_md5
                    end
       fire_cmd = Ssh.deploy(node, user_name, unique_name, command, file_hash)
-      result = Ssh.fire!(node,fire_cmd)
+      result   = Ssh.fire!(node,fire_cmd)
       #clear out the md5 folders and those not requested to keep
       s = Stage.find_by_path(stage_path) if stage_path
       unless s and s.params['save_logs']
@@ -199,6 +202,9 @@ module Mobilize
                                    elsif (1..5).to_a.map{|n| "stage#{n.to_s}"}.include?(split_path.last[-6..-1])
                                      #runner<jobname>stage1
                                    "#{split_path.last[-6..-1]}.out"
+                                   elsif sdst.handler == 'git' and split_path.length == 4
+                                     #full repo; use targz format
+                                     "#{ split_path[2] }.tar.gz"
                                    else
                                      split_path.last
                                    end

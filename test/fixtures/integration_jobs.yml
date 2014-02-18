@@ -23,3 +23,9 @@
   status: ""
   stage1: ssh.run save_logs:true, node:"test_node", user:@owner, sources:["git://c4ssio/mobilize-ssh/test/fixtures/code.rb","git://c4ssio/mobilize-ssh/test/fixtures/code.sh"], cmd:"ruby code.rb"
   stage2: gsheet.write source:stage1, target:"ssh4.out"
+- name: ssh5
+  active: true
+  trigger: "after ssh4"
+  status: ""
+  stage1: ssh.run save_logs:true, node:"test_node", user:@owner, source:"git://c4ssio/mobilize-ssh", cmd:"cd @namespace && ruby code.rb", params:{namespace:"mobilize-ssh/test/fixtures"}
+  stage2: gsheet.write source:stage1, target:"ssh5.out"

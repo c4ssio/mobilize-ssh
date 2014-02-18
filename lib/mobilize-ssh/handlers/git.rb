@@ -112,15 +112,17 @@ module Mobilize
       end
       #slash in front of path
       _repo_dir                 = Git.pull  _domain, _repo, _revision
-      if _file_path
+      if _file_path.strip.length > 0
         _full_path              = "#{ _repo_dir }/#{ _file_path }"
         _result                 = "cat #{ _full_path}".bash true
         FileUtils.rm_r            _repo_dir, force: true
       else
-        _result                 = "tar -zcvf #{ _repo_dir }.tar.gz " +
-                                  "#{ _repo_dir } && " +
-                                  "cat #{ _repo_dir }.tar.gz".bash( true )
+        _base_name, _dir_name   = _repo_dir.ie{ |_dir| [ File.basename( _dir), File.dirname( _dir ) ] }
+        _pack_cmd               = "cd #{ _dir_name } && tar zcvf #{ _base_name }.tar.gz #{ _base_name }"
+        _pack_cmd.bash(true)
+        _result                 = "cat #{ _repo_dir }.tar.gz".bash( true )
         FileUtils.rm_r            _repo_dir, force: true
+        FileUtils.rm_r            "#{ _repo_dir }.tar.gz", force: true
       end
       return _result
     end

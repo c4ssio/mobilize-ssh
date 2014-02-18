@@ -35,3 +35,11 @@
   state: working
   count: 1
   confirmed_ats: []
+- path: "Runner_@owner(test)/jobs/ssh5/stage1"
+  state: working
+  count: 1
+  confirmed_ats: []
+- path: "Runner_@owner(test)/jobs/ssh5/stage2"
+  state: working
+  count: 1
+  confirmed_ats: []
