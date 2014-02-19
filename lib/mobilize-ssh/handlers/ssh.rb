@@ -11,7 +11,7 @@ module Mobilize
         mode = fname.ends_with?(".gz") ? "wb" : "w"
         File.open(fpath,mode) {|f| f.print(fdata)}
         if fname.ends_with?(".tar.gz")
-          "cd #{ loc_dir } && tar xzvf #{ fname }".bash(true)
+          "cd #{ loc_dir } && tar xzvf #{ fname } && rm #{ fname }".bash(true)
         end
       end
       return loc_dir if file_hash.keys.length>0

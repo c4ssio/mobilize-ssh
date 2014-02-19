@@ -18,8 +18,8 @@ module Net
           if                                    _except and @exit_code!=0
             raise                               "#{ @host } stderr: " + @stderr_data
           else
-            _result                           = {  'stdout'      => @stdout_data.strip,
-                                                   'stderr'      => @stderr_data.strip,
+            _result                           = {  'stdout'      => @stdout_data,
+                                                   'stderr'      => @stderr_data,
                                                    'exit_code'   => @exit_code,
                                                    'exit_signal' => @exit_signal  }
             _result

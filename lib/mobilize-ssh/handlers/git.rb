@@ -120,7 +120,6 @@ module Mobilize
         _base_name, _dir_name   = _repo_dir.ie{ |_dir| [ File.basename( _dir), File.dirname( _dir ) ] }
         _pack_cmd               = "cd #{ _dir_name } && tar zcvf #{ _base_name }.tar.gz #{ _base_name }"
         _pack_cmd.bash(true)
-        _result                 = "cat #{ _repo_dir }.tar.gz".bash( true )
         FileUtils.rm_r            _repo_dir, force: true
         FileUtils.rm_r            "#{ _repo_dir }.tar.gz", force: true
       end
